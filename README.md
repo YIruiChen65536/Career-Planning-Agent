@@ -27,6 +27,7 @@ uvicorn server:app --reload # 启动后访问 http://127.0.0.1:8000/docs
 | [docs/06-开发规则手册.md](docs/06-开发规则手册.md) | Git 工作流、提交规范、LLM 纪律、测试、临时文件清理 | **每次提交前** |
 | [docs/07-文档维护规则.md](docs/07-文档维护规则.md) | 每篇文档的负责人与更新时机 | 改文档时 |
 | [docs/decisions/](docs/decisions/) | 架构决策记录（ADR） | 想推翻某个决定时先读 |
+| [docs/logs/](docs/logs/) | 每轮开发/测试/review 的过程记录（只增不改） | 每轮工作结束时写；出事回溯时查 |
 | [docs/research/](docs/research/) | 选型调研过程存档（只读，不再维护） | 想知道"为什么这么选"时 |
 
 ## 当前状态（同步自 04-进度状态）

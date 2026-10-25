@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS roadmaps (
 
 def _conn() -> sqlite3.Connection:
     config.DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(config.DB_PATH)
+    conn = sqlite3.connect(config.DB_PATH, timeout=15)  # timeout：多进程共写（演示+验收并行）时等待锁而非立刻报错
     conn.executescript(_SCHEMA)
     return conn
 

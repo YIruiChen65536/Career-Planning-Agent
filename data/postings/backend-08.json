@@ -1,0 +1,10 @@
+[
+  {
+    "id": "backend-008",
+    "title": "后端开发工程师-安泰天龙",
+    "company": "安泰科技股份有限公司",
+    "source": "锦鲤求职",
+    "url": "https://apply.jinliqiuzhi.com/jobs/736204",
+    "description": "岗位能力要求：1.熟练掌握Java编程语言，熟悉JDK8+新特性，对集合、并发、IO等核心机制有较深理解；2.精通Spring Boot、Spring Cloud等主流微服务框架，熟悉自动配置、AOP等核心原理；3.熟练掌握PostgreSQL数据库，精通复杂SQL编写、索引优化、执行计划分析，具备数据库调优与数据迁移经验；4.熟悉Redis、RabbitMQ等常用中间件的使用场景与常见问题解决方案；5.熟练使用Maven/Gradle构建工具，熟悉Git，了解Docker/K8s容器化部署基本操作；6.具备良好的RESTful API接口设计能力，熟练使用Swagger/Knife4j，熟悉前后端联调流程。任职资格：本科及以上学历，计算机相关专业，有相关实习经验者优先。2027届校招岗位，工作地点：天津。"
+  }
+]

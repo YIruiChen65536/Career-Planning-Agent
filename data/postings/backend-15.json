@@ -1,0 +1,10 @@
+[
+  {
+    "id": "backend-015",
+    "title": "Golang开发工程师",
+    "company": "斗象科技",
+    "source": "猎聘",
+    "url": "https://m.liepin.com/job/1980492061.shtml",
+    "description": "岗位职责：1.实现请求处理中间件（LLM token统计、内容过滤、预/后处理）；2.开发配额控制、限流、成本统计功能；3.使用Kubernetes部署、管理和运维推理服务（Deployment、HPA、Service、Ingress等）；4.优化服务延迟与稳定性，处理生产环境常见问题。任职要求：1.4-8年基础架构开发经验，熟练使用Go/Rust等系统级编程语言；2.熟悉HTTP/gRPC与API网关开发；3.有Kubernetes实战经验（部署、配置HPA、Service、ConfigMap、监控告警等）；4.写过高并发服务，了解限流、熔断、日志、监控；5.对大模型API（OpenAI格式）有基本了解，或学习意愿强。加分项：用过vLLM、TGI、LiteLLM等推理框架；做过模型多厂商切换与成本敏感路由；熟悉Prometheus+Grafana。工作地点：上海浦东。"
+  }
+]

@@ -1,0 +1,10 @@
+[
+  {
+    "id": "backend-014",
+    "title": "go研发工程师(J10027)",
+    "company": "通号智慧城市",
+    "source": "智联招聘",
+    "url": "https://www.zhaopin.com/jobdetail/CC399602780J40943030602.htm",
+    "description": "岗位职责：1.基于Go语言开发高并发、低延迟的微服务或云原生应用；2.设计并实现gRPC/HTTP服务接口，支撑分布式系统间通信；3.参与服务治理、链路追踪等可观测性体系建设；4.优化系统资源使用（CPU/内存），提升稳定性与容错能力；5.配合DevOps团队完成容器化部署（Docker/K8s）与CI/CD流程落地。任职要求：1.精通Go语言，深入理解goroutine、channel、context及内存管理机制；2.熟悉Gin、Echo或Beego等Web框架，有高性能微服务开发经验；3.掌握gRPC、Protobuf、RESTful API设计；4.熟悉PostgreSQL/MySQL、Redis、Etcd等存储组件，具备高并发系统调优能力；5.有Kubernetes、Service Mesh等云原生实践经验者优先。要求3年以上相关工作经验、硕士学历。工作地点：北京丰台。"
+  }
+]

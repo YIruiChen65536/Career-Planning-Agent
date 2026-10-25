@@ -3,7 +3,6 @@
 - get_model()        按 config.MODEL（"provider:model" 串，.env 切换）创建 PAI 模型
 - build_agent()      统一 temperature=0、retries=1（06 手册 §3 纪律）
 - ask_json()         结构化输出 + SQLite 缓存（演示可离线回放）
-- ask_text_stream()  纯文本流式输出（M4 对话用）
 """
 
 from __future__ import annotations
@@ -73,7 +72,10 @@ def _cache_key(agent_name: str, system_prompt: str, user_prompt: str) -> str:
 
 
 async def ask_json(agent_name: str, system_prompt: str, user_prompt: str, output_type: type[T]) -> T:
-    """结构化问答（带 SQLite 缓存）：命中缓存直接回放，未命中才真调用并落缓存。"""
+    """结构化问答（带 SQLite 缓存）：命中缓存直接回放，未命中才真调用并落缓存。
+
+    这是全项目唯一的 LLM 调用形态：纯文本流式入口（旧 ask_text_stream）已删除——
+    它绕过缓存（06 手册 §3 禁令）且无任何调用方；对话流式观感由 server 分帧回放实现。"""
     key = _cache_key(agent_name, system_prompt, user_prompt)
     hit = store.cache_get(key)
     if hit is not None:
@@ -82,11 +84,3 @@ async def ask_json(agent_name: str, system_prompt: str, user_prompt: str, output
     result = await agent.run(user_prompt)
     store.cache_put(key, result.output.model_dump(mode="json"))
     return result.output
-
-
-async def ask_text_stream(agent_name: str, system_prompt: str, user_prompt: str):
-    """纯文本流式输出；文本不进缓存（缓存只针对结构化结果）。"""
-    agent = build_agent(system_prompt=system_prompt)
-    async with agent.run_stream(user_prompt) as result:
-        async for chunk in result.stream_text(delta=True):
-            yield chunk

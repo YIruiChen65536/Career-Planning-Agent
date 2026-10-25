@@ -32,6 +32,10 @@
   var STORAGE_PROFILE = "careerAgent.profile.v1";
   var STORAGE_CHAT = "careerAgent.chat.v1";
   var CHAT_HISTORY_MAX = 60;
+  var CHAT_HISTORY_SEND = 12;     // 每轮随请求上送的近期消息条数（服务端上限 32）
+  // 与后端 schemas.UNNAMED_PROFILE_NAME 逐字一致：姓名留空时按默认档案名建档/寻址，
+  // 双方各写一个字面量（前端拿不到 Python 常量），改其一必须同步另一个
+  var DEFAULT_PROFILE_NAME = "未命名学生";
 
   var TERMS = (window.MOCK && window.MOCK.TERMS) ||
     ["大一上", "大一下", "大二上", "大二下", "大三上", "大三下", "大四上", "大四下"];
@@ -779,7 +783,16 @@
   function currentProfileName() {
     if (state.profile && state.profile.name) return state.profile.name;
     var stored = storageGet(STORAGE_PROFILE, null);
-    return (stored && stored.name) || "未填";
+    return (stored && stored.name) || DEFAULT_PROFILE_NAME;
+  }
+
+  function chatHistoryForRequest() {
+    // 本轮 user 消息在 submitChat 里已 push，先去掉；再取最近 N 条随请求上送，
+    // 让服务端 run_dialogue 拼进 prompt（多轮记忆），不再只存在本地做渲染
+    return state.chat.history.slice(0, -1).slice(-CHAT_HISTORY_SEND)
+      .map(function (m) {
+        return { role: m.role === "assistant" ? "assistant" : "user", content: String(m.content || "") };
+      });
   }
 
   function initChat() {
@@ -919,6 +932,7 @@
     var type = createTypewriter(bubble, function () { scrollChatToBottom(true); });
     var received = "";
     var finalized = false;
+    var lastTurn = null; // 终帧 DialogueTurn（服务端意图识别结果，见 actionNote）
 
     function finish(demo, note) {
       if (finalized) return;
@@ -940,11 +954,18 @@
     }
 
     streamChat(
-      { profile_name: currentProfileName(), message: text },
+      {
+        profile_name: currentProfileName(),
+        message: text,
+        history: chatHistoryForRequest(), // 多轮上下文随请求上送（服务端拼进对话 prompt）
+      },
       {
         onText: function (t) {
           received += t;
           type.push(t);
+        },
+        onTurn: function (turn) {
+          lastTurn = turn;
         },
         onDone: function () {
           if (!received.trim()) {
@@ -952,13 +973,27 @@
             fallbackChat(text, type, finish, received);
             return;
           }
-          finish(false, null);
+          finish(false, actionNote(lastTurn));
         },
         onFail: function () {
           fallbackChat(text, type, finish, received);
         },
       }
     );
+  }
+
+  // 终帧 DialogueTurn.action 的消费：识别到改路线/调时长意图时附上明确行动指引。
+  // 当前版本重排仍在表单侧完成（对话内自动重排需要结构化新目标，属后续扩展），
+  // 至少让"我说了要改"有系统回应，不再静默丢弃意图帧。
+  function actionNote(turn) {
+    if (!turn || !turn.action) return null;
+    if (turn.action === "replan") {
+      return "已识别改路线请求：请点上方「修改画像」切换路线/岗位后重新生成";
+    }
+    if (turn.action === "adjust_hours") {
+      return "已识别调时长请求：请回表单调整每周投入后重新生成";
+    }
+    return null;
   }
 
   function fallbackChat(userText, type, finish, alreadyReceived) {
@@ -1080,9 +1115,11 @@
   }
 
   /**
-   * POST /api/chat（SSE）。契约：body={profile_name, message}。
-   * 兼容多种服务端事件格式：data: [DONE] / data: {"delta":...} / data: {"reply":...} / data: 纯文本。
+   * POST /api/chat（SSE）。契约：body={profile_name, message, history}。
+   * 帧格式：data: {"delta":...} 增量帧 + data: {"turn":{reply,action,reason}} 终帧；
+   * 兼容多种服务端事件格式：data: [DONE] / {"reply":...} / 纯文本。
    * 3 秒未建连 → onFail（降级）；建连后按流读取，整体上限 120s。
+   * onTurn(turn) 可选：终帧的完整 DialogueTurn（意图识别结果）。
    */
   function streamChat(body, handlers) {
     var ctrl = new AbortController();
@@ -1111,6 +1148,7 @@
         }
         // 非 SSE：按整段 JSON 处理（DialogueTurn 契约 {reply, action, reason}）
         return res.json().then(function (data) {
+          if (data && typeof data === "object" && data.action) handlers.onTurn && handlers.onTurn(data);
           var text = extractText(data);
           if (text) handlers.onText(text);
         });
@@ -1143,7 +1181,13 @@
       if (data === "[DONE]") { finished = true; return; }
       var text = "";
       try {
-        text = extractText(JSON.parse(data));
+        var obj = JSON.parse(data);
+        if (obj && typeof obj === "object" && obj.turn) {
+          // 终帧：完整 DialogueTurn（意图识别），不是文本增量——交给 onTurn 消费
+          if (handlers.onTurn) handlers.onTurn(obj.turn);
+          return;
+        }
+        text = extractText(obj);
       } catch (e) {
         text = data; // 纯文本增量
       }

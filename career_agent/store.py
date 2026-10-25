@@ -4,6 +4,7 @@ LLM 缓存（cache_key/cache_get/cache_put）+ 档案与历史方案存取（M3�
 roadmaps 表按 profile_id 关联 profiles，对外接口一律用 name 寻址。
 """
 
+import contextlib
 import hashlib
 import json
 import sqlite3
@@ -30,11 +31,21 @@ CREATE TABLE IF NOT EXISTS roadmaps (
 """
 
 
-def _conn() -> sqlite3.Connection:
+@contextlib.contextmanager
+def _conn():
+    """每次操作一条短命连接：用完显式提交并关闭（不靠 CPython 引用计数回收）。
+
+    WAL 模式让读写不互斥——此前偶发 "database is locked"（async 端点并发读写
+    同一库）的主要根因；timeout=15 再兜一层等锁。"""
     config.DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(config.DB_PATH, timeout=15)  # timeout：多进程共写（演示+验收并行）时等待锁而非立刻报错
-    conn.executescript(_SCHEMA)
-    return conn
+    conn = sqlite3.connect(config.DB_PATH, timeout=15)
+    try:
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.executescript(_SCHEMA)
+        yield conn
+        conn.commit()
+    finally:
+        conn.close()
 
 
 def cache_key(call: str, payload) -> str:

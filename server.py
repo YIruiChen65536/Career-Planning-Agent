@@ -1,13 +1,16 @@
 """FastAPI 入口：uvicorn server:app --reload。路由层只做协议转换，业务在 career_agent/。"""
 
+import asyncio
 import json
 from collections.abc import AsyncIterator
 from pathlib import Path
 
+from typing import Literal
+
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from career_agent import agent, datasource, pipeline, store
 from career_agent.schemas import Roadmap, StudentProfile
@@ -23,7 +26,8 @@ def health() -> dict:
 @app.get("/api/analyze/{keyword}")
 async def analyze(keyword: str, limit: int = Query(default=10, ge=1, le=50)) -> dict:
     """①+②：某岗位方向的 JD 列表 + 技能频次表（LLM 配置缺失/网关不可达时 503）。"""
-    postings = datasource.get_source().fetch(keyword, limit)
+    # 文件 IO（读语料 JSON）走线程池：async 端点内联同步 IO 会阻塞 event loop
+    postings = await asyncio.to_thread(datasource.get_source().fetch, keyword, limit)
     reqs_or_none, errors = await pipeline.extract_all(postings)
     reqs = [r for r in reqs_or_none if r is not None]
     if postings and not reqs:
@@ -41,7 +45,7 @@ async def analyze(keyword: str, limit: int = Query(default=10, ge=1, le=50)) -> 
 @app.post("/api/plan")
 async def plan(profile: StudentProfile) -> Roadmap:
     """①→④ 全链路：画像 -> 按 target_role 检索语料 -> 抽取/归并 -> 课程映射 -> 分学期路线图，落库后返回。"""
-    postings = datasource.get_source().fetch(profile.target_role, 10)
+    postings = await asyncio.to_thread(datasource.get_source().fetch, profile.target_role, 10)
     reqs_or_none, errors = await pipeline.extract_all(postings)
     reqs = [r for r in reqs_or_none if r is not None]
     if postings and not reqs:
@@ -57,8 +61,9 @@ async def plan(profile: StudentProfile) -> Roadmap:
     except Exception as exc:  # ③④的 LLM 调用失败（配置缺失/网关不可达），沿用 analyze 的 503 口径
         detail = f"{type(exc).__name__}: {str(exc)[:150]}"
         raise HTTPException(status_code=503, detail=f"LLM 不可用：请检查 .env 配置（{detail}）") from exc
-    store.save_profile(profile)
-    store.save_roadmap(profile.name, roadmap)
+    # sqlite 写同样走线程池：不阻塞 event loop（/api/chat 的 SSE 回放与其并发时尤其重要）
+    await asyncio.to_thread(store.save_profile, profile)
+    await asyncio.to_thread(store.save_roadmap, profile.name, roadmap)
     return roadmap
 
 
@@ -71,11 +76,22 @@ def get_plan(name: str) -> Roadmap:
     return roadmap
 
 
+class ChatMessage(BaseModel):
+    """⑤ 的单条历史消息（前端回传多轮上下文，角色限定学生/顾问两侧）。"""
+
+    role: Literal["user", "assistant"]
+    content: str
+
+
 class ChatRequest(BaseModel):
-    """⑤ 的请求体：按档案名寻址学生（画像与路线图已随 POST /api/plan 落库）。"""
+    """⑤ 的请求体：按档案名寻址学生（画像与路线图已随 POST /api/plan 落库）。
+
+    history 为近期对话上下文（[{role, content}]，不含本轮 message）——服务端
+    此前写死 history=[]，第二轮提问完全失忆；不传则视为全新对话（向后兼容）。"""
 
     profile_name: str
     message: str
+    history: list[ChatMessage] = Field(default_factory=list, max_length=32)
 
 
 _CHAT_DELTA_CHARS = 24  # 每帧增量字符数：run_dialogue 是结构化整段产出（带缓存），此处只做分帧流式回放
@@ -84,19 +100,21 @@ _CHAT_DELTA_CHARS = 24  # 每帧增量字符数：run_dialogue 是结构化整�
 @app.post("/api/chat")
 async def chat(req: ChatRequest) -> StreamingResponse:
     """⑤：对话调整——画像 + 已存路线做上下文，run_dialogue 出 DialogueTurn，SSE 流式回放。"""
-    profile = store.get_profile(req.profile_name)
+    profile = await asyncio.to_thread(store.get_profile, req.profile_name)
     if profile is None:
         raise HTTPException(
             status_code=404,
             detail=f"学生 {req.profile_name} 暂无档案，请先在首页表单提交画像（POST /api/plan）",
         )
-    roadmap = store.get_roadmap(req.profile_name)
+    roadmap = await asyncio.to_thread(store.get_roadmap, req.profile_name)
     if roadmap is None:
         raise HTTPException(
             status_code=404, detail=f"学生 {req.profile_name} 暂无已存路线图，请先 POST /api/plan 生成"
         )
     try:
-        turn = await agent.run_dialogue(profile, roadmap, req.message, history=[])
+        turn = await agent.run_dialogue(
+            profile, roadmap, req.message, history=[m.model_dump() for m in req.history]
+        )
     except Exception as exc:  # LLM 配置缺失/网关不可达，与 /api/analyze 同口径 503
         detail = f"{type(exc).__name__}: {str(exc)[:150]}"
         raise HTTPException(status_code=503, detail=f"LLM 不可用：请检查 .env 配置（{detail}）") from exc

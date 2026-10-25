@@ -14,6 +14,7 @@ from pydantic import BaseModel
 from . import config, llm
 from .datasource import get_source
 from .schemas import (
+    TERMS,
     CourseMapping,
     ExtractedRequirements,
     JobPosting,
@@ -90,27 +91,58 @@ async def extract_all(
     return reqs, errors
 
 
+# ②的确定性别名归并：语料中实测的近名（同一技能不同写法）；完整的语义归并
+# （含别名表自动生成）TODO(M1) 交 LLM，本表只兜已知的确定性写法
+_SKILL_ALIAS: dict[str, str] = {
+    "SQL优化": "SQL",
+    "复杂SQL": "SQL",
+    "复杂SQL编写": "SQL",
+}
+
+# 同名技能跨类（hard/tool）平票时的类别拍板顺序：技术属性更强的类优先
+_CAT_PRIORITY = {"hard": 0, "tool": 1, "soft": 2}
+
+
+def _dominant_category(cats) -> str:
+    """同名技能跨类时的类别拍板：众数优先，平票按 hard>tool>soft（确定性）。"""
+    counts = cats.value_counts()
+    tied = counts[counts == counts.max()].index.tolist()
+    return min(tied, key=lambda c: _CAT_PRIORITY.get(c, 99))
+
+
 def aggregate_skills(reqs: list[ExtractedRequirements]) -> list[SkillStat]:
-    """② 归并：语义合并交给 LLM（TODO(M1)，含别名表），频次与核心判定在本函数用 pandas 完成。"""
-    df = pd.DataFrame(
-        [(r.posting_id, s, "hard") for r in reqs for s in r.hard_skills]
-        + [(r.posting_id, s, "tool") for r in reqs for s in r.tools]
-        + [(r.posting_id, s, "soft") for r in reqs for s in r.soft_skills],
-        columns=["posting_id", "skill", "category"],
-    )
+    """② 归并：确定性别名合并 + 同名跨类并成一行，频次与核心判定用 pandas 完成。
+
+    语义合并（任意近名）TODO(M1) 交 LLM；本函数保证：同名技能只出一行（此前
+    PostgreSQL 会按 hard/tool 拆两行、频次被稀释并干扰 is_core 判定），
+    频次 = 提到该技能的 JD 数（同一 JD 内跨类出现只计 1 条）。"""
+    rows = [
+        (r.posting_id, s, _SKILL_ALIAS.get(s, s), cat)
+        for r in reqs
+        for s, cat in (
+            *((s, "hard") for s in r.hard_skills),
+            *((s, "tool") for s in r.tools),
+            *((s, "soft") for s in r.soft_skills),
+        )
+    ]
+    df = pd.DataFrame(rows, columns=["posting_id", "skill", "canonical", "category"])
     if df.empty:
         return []
     total = df["posting_id"].nunique()
-    stats = (
-        df.groupby(["skill", "category"])["posting_id"].nunique().reset_index(name="n")
+    uniq = df.drop_duplicates(["posting_id", "canonical"])  # 同 JD 同技能跨类只计 1 条
+    stats = uniq.groupby("canonical")["posting_id"].nunique().reset_index(name="n")
+    cats = uniq.groupby("canonical")["category"].agg(_dominant_category)
+    aliases = (
+        df[df["skill"] != df["canonical"]].groupby("canonical")["skill"]
+        .agg(lambda s: sorted(set(s)))
     )
     return [
         SkillStat(
-            skill=row.skill,
-            category=row.category,
+            skill=row.canonical,
+            category=str(cats[row.canonical]),
             frequency=int(row.n),
             is_core=bool(row.n / total >= CORE_FREQUENCY_RATIO),
-            aliases=[],
+            aliases=list(aliases.get(row.canonical, [])),
         )
         for row in stats.itertuples(index=False)
     ]
@@ -122,10 +154,14 @@ async def map_courses(skills: list[SkillStat]) -> list[CourseMapping]:
     if not top:
         return []
     batches = [top[i : i + MAP_BATCH_SIZE] for i in range(0, len(top), MAP_BATCH_SIZE)]
-    results = await asyncio.gather(*(_map_batch(b) for b in batches))
+    done = await asyncio.gather(
+        *(_map_batch(b) for b in batches), return_exceptions=True
+    )  # 与 extract_all 同口径：单批失败降位丢弃，不炸整链（否则一批挂掉 3~4 批结果全丢 → 503）
     requested = {s.skill for s in top}
     merged: list[CourseMapping] = []
-    for batch in results:
+    for batch in done:
+        if isinstance(batch, BaseException):  # 失败批的技能无映射行（下游按缺省处理）
+            continue
         for m in batch.mappings:
             if m.skill not in requested:  # 模型幻觉出的批外技能：直接丢弃
                 continue
@@ -288,8 +324,8 @@ class _RoadmapDraft(BaseModel):
     risks: list[str] = []
 
 
-_TERMS = ("大一上", "大一下", "大二上", "大二下", "大三上", "大三下", "大四上", "大四下")
-_GRADE_TO_SEM = {t: i + 1 for i, t in enumerate(_TERMS)}
+# 学期名 -> 第几学期；TERM 单一定义在 schemas.TERMS（避免双源漂移）
+_GRADE_TO_SEM = {t: i + 1 for i, t in enumerate(TERMS)}
 
 
 def _roadmap_user_prompt(
@@ -297,7 +333,7 @@ def _roadmap_user_prompt(
 ) -> str:
     """把画像+技能+映射+资产日历拼成④的用户输入（进缓存键，格式改动=缓存全失效，慎改）。"""
     curriculum, opportunities = _assets()
-    cur = _GRADE_TO_SEM.get(profile.grade, 1)  # 未知年级按大一上：保守地从第 1 学期排起
+    cur = _GRADE_TO_SEM[profile.grade]  # schemas 已保证规范学期名：未知年级在校验层 422，不再静默回退大一上
     cap = profile.weekly_hours * 6 // 5
     lines = [
         "【学生画像】",
@@ -331,7 +367,7 @@ def _roadmap_user_prompt(
     lines += ["", f"【可选课程】（courses 只能从这里选；当前第 {cur} 学期，仅列当前及以后开课）"]
     for sem in range(cur, 9):
         names = "、".join(c["name"] for c in curriculum["courses"] if c["semester"] == sem)
-        lines.append(f"- 第{sem}学期（{_TERMS[sem - 1]}）: {names or '无'}")
+        lines.append(f"- 第{sem}学期（{TERMS[sem - 1]}）: {names or '无'}")
     lines += ["", "【竞赛日历】（名称｜常见月份）"]
     lines += [f"- {c['name']}｜{'/'.join(map(str, c['months']))} 月" for c in opportunities["competitions"]]
     lines += ["", "【实习档位】"]
@@ -339,7 +375,7 @@ def _roadmap_user_prompt(
     lines += [
         "",
         "（月份对照：秋季学期=9~次年1月，春季学期=2~8月；大三暑假档在第 6 学期后，秋招黄金窗口在第 7 学期 9-11 月）",
-        f"请输出第 {cur} 学期（{_TERMS[cur - 1]}）至第 8 学期（大四下）的 semesters 草稿（term 用规范学期名）。",
+        f"请输出第 {cur} 学期（{TERMS[cur - 1]}）至第 8 学期（大四下）的 semesters 草稿（term 用规范学期名）。",
     ]
     return "\n".join(lines)
 
@@ -364,7 +400,7 @@ def _finalize_roadmap(
     curriculum, _ = _assets()
     sem_of_course = {c["name"]: c["semester"] for c in curriculum["courses"]}
     order_in_curriculum = {c["name"]: i for i, c in enumerate(curriculum["courses"])}
-    cur = _GRADE_TO_SEM.get(profile.grade, 1)
+    cur = _GRADE_TO_SEM[profile.grade]  # 同 _roadmap_user_prompt：schemas 保证规范名，直接索引
     # 1.2 倍上限用整数运算取整：15*1.2 在浮点下是 17.999...，int() 会误钳到 17
     cap = profile.weekly_hours * 6 // 5
 
@@ -392,7 +428,7 @@ def _finalize_roadmap(
     clamped = False
     semesters: list[SemesterPlan] = []
     for sem in range(1, 9):
-        term = _TERMS[sem - 1]
+        term = TERMS[sem - 1]
         if sem < cur:
             # 取舍：当前学期之前的学期已成定局、不可规划，不排内容只做占位——
             # 但保持 8 学期完整结构，让路线图始终呈现完整的本科时间轴
@@ -417,8 +453,10 @@ def _finalize_roadmap(
 
     # path 特化：确定性注入（06 手册§3 精神——硬行为写死在代码里，不靠提示词"劝"模型）
     if profile.path == "考研":
-        for sp in semesters:  # 实习让位：剔除草稿里的实习节点
-            sp.actions = [a for a in sp.actions if "实习" not in a]
+        # 求职动作让位：草稿自带的实习/秋招/投递节点一并剔除，备考为唯一主线
+        # （此前只剔"实习"，LLM 草稿里的"抽空投秋招"会原样混进考研路线）
+        for sp in semesters:
+            sp.actions = [a for a in sp.actions if "实习" not in a and "秋招" not in a]
         for sem, action in (
             (6, "考研备考启动：数学一轮 + 408 统考专业课复习"),
             (7, "考研冲刺：近十年真题与模拟考（12 月初试）"),
@@ -426,7 +464,7 @@ def _finalize_roadmap(
         ):
             if sem >= cur:
                 semesters[sem - 1].actions.append(action)
-        risks.append("考研路线：实习节点已让位给备考，工程实践以课程配套项目为主")
+        risks.append("考研路线：实习/秋招节点已让位给备考，工程实践以课程配套项目为主")
     elif profile.path == "就业":
         if cur <= 7:
             semesters[6].actions.append("秋招投递与面试准备（9-11 月黄金窗口，简历/八股/项目复盘）")

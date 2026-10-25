@@ -1,0 +1,10 @@
+[
+  {
+    "id": "algo-002",
+    "title": "算法工程师（NLP方向）（2027届秋招）",
+    "company": "携程",
+    "source": "牛客网",
+    "url": "https://www.nowcoder.com/jobs/detail/463568",
+    "description": "岗位职责：1.基于NLP和机器学习算法，对旅游文本（用户评论、行程单、客服对话等）进行深度语义解析，构建文本分类、信息抽取、知识图谱与智能生成解决方案；2.研发智能对话系统，优化意图识别、槽位填充及强化学习策略算法；3.搭建高并发智能客服系统，实现大模型高效部署，用量化、蒸馏与分布式计算保障线上性能。任职要求：1.2027届本硕博应届生，理解Transformer架构及预训练模型（BERT/GPT），掌握文本生成、语义匹配、序列标注等SOTA方法；2.熟练使用PyTorch/TensorFlow，具备模型服务化（ONNX/TensorRT）和分布式训练（DeepSpeed）实战经验；3.熟练应用Java，掌握C++/Python至少一门，熟悉Linux高性能计算与系统调优；4.有大模型微调（LoRA/P-tuning）、Agent落地、向量检索经验，熟悉LLaMA-Factory者优先。"
+  }
+]

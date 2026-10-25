@@ -1,0 +1,10 @@
+[
+  {
+    "id": "backend-013",
+    "title": "golang开发工程师",
+    "company": "莫比森(深圳)科技有限公司",
+    "source": "智联招聘",
+    "url": "https://www.zhaopin.com/jobdetail/CCL1525459860J40909314003.htm",
+    "description": "岗位职责：1.基于Golang与Gin构建高性能、高可用的RESTful API及微服务，负责高并发、低延迟系统的架构设计与性能调优；2.负责WebSocket、gRPC、TCP/UDP等长连接通信模块开发；3.主导服务容器化改造与部署，参与K8s集群管理与调度优化；4.负责MySQL、Redis、Kafka等中间件的架构设计与高可用保障；5.主导线上疑难问题排查（内存泄漏、死锁等），推行代码规范并参与Code Review。任职要求：1.3-5年Golang后端开发经验，数据结构与算法基础扎实；2.精通Golang，深入理解GMP模型、GC机制与内存管理；3.熟悉HTTP/HTTPS、TCP/IP协议，有海量长连接通信实战经验；4.精通Docker，对Kubernetes有深入理解与实战经验；5.掌握分布式锁、限流降级、分布式事务等核心方案。"
+  }
+]

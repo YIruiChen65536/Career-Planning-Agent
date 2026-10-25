@@ -1,0 +1,59 @@
+{
+  "note": "竞赛名称/级别/举办月份均经官网或权威渠道核实（2025-2026 年信息，详见 data/assets-README.md 的核实记录）。months 为该赛事从报名/预选到决赛的常见举办月份数字数组（含跨阶段），逐年微调属正常，用前请以官网当年通知为准。prep_hours_est 为从零基础到具备参赛能力的粗估总投入（小时），供④规划折算每周投入用。",
+  "competitions": [
+    { "name": "ACM-ICPC国际大学生程序设计竞赛（亚洲区域赛）", "level": "国际", "months": [9, 10, 11], "skills": ["C/C++", "Algorithms", "Data Structures"], "prep_hours_est": 600 },
+    { "name": "中国大学生程序设计竞赛（CCPC）", "level": "国家", "months": [9, 10, 11, 12], "skills": ["C/C++", "Algorithms", "Data Structures"], "prep_hours_est": 500 },
+    { "name": "蓝桥杯全国软件和信息技术专业人才大赛", "level": "国家", "months": [4, 6], "skills": ["C/C++", "Java", "Algorithms"], "prep_hours_est": 150 },
+    { "name": "中国高校计算机大赛-团体程序设计天梯赛", "level": "国家", "months": [4, 7], "skills": ["C/C++", "Java", "Algorithms"], "prep_hours_est": 200 },
+    { "name": "CCF CSP计算机软件能力认证", "level": "国家", "months": [3, 6, 9, 12], "skills": ["C/C++", "Algorithms", "Data Structures"], "prep_hours_est": 120 },
+    { "name": "PAT计算机程序设计能力考试", "level": "国家", "months": [3, 6, 9, 12], "skills": ["C/C++", "Algorithms", "Data Structures"], "prep_hours_est": 100 },
+    { "name": "全国大学生数学建模竞赛（高教社杯）", "level": "国家", "months": [9], "skills": ["Mathematical Modeling", "Python", "MATLAB", "Data Analysis"], "prep_hours_est": 80 },
+    { "name": "美国大学生数学建模竞赛（MCM/ICM）", "level": "国际", "months": [1, 2], "skills": ["Mathematical Modeling", "Python", "Academic Writing", "Data Analysis"], "prep_hours_est": 80 },
+    { "name": "“挑战杯”全国大学生课外学术科技作品竞赛", "level": "国家", "months": [4, 5, 10, 11], "skills": ["Research", "Technical Writing", "Teamwork"], "prep_hours_est": 250 },
+    { "name": "中国国际大学生创新大赛（原“互联网+”大学生创新创业大赛）", "level": "国际", "months": [4, 5, 6, 10, 11], "skills": ["Entrepreneurship", "Product Design", "Presentation", "Teamwork"], "prep_hours_est": 300 },
+    { "name": "Kaggle数据科学竞赛", "level": "国际", "months": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], "skills": ["Machine Learning", "Python", "Data Analysis"], "prep_hours_est": 200 },
+    { "name": "阿里云天池大数据竞赛", "level": "国际", "months": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], "skills": ["Machine Learning", "Python", "Big Data", "Data Analysis"], "prep_hours_est": 200 },
+    { "name": "CCF大数据与计算智能大赛（BDCI）", "level": "国家", "months": [9, 10, 11, 12], "skills": ["Machine Learning", "Python", "Big Data"], "prep_hours_est": 200 },
+    { "name": "全国大学生信息安全竞赛（创新实践能力赛）", "level": "国家", "months": [11, 12], "skills": ["Network Security", "Web Security", "Linux"], "prep_hours_est": 250 },
+    { "name": "中国大学生计算机设计大赛", "level": "国家", "months": [4, 5, 7, 8], "skills": ["Software Development", "Web Development", "Product Design"], "prep_hours_est": 150 },
+    { "name": "中国高校计算机大赛-大数据挑战赛", "level": "国家", "months": [3, 4, 5, 8], "skills": ["Machine Learning", "Python", "Big Data"], "prep_hours_est": 200 }
+  ],
+  "projects": [
+    { "name": "个人博客/作品集网站", "desc": "静态站点或轻量全栈（如 Hexo/Hugo 或 FastAPI+模板），部署到云服务器或 Pages，绑定域名，作为简历门面与部署练手。", "skills": ["Web Development", "HTML/CSS", "JavaScript", "Docker", "Linux"], "duration_weeks": 4 },
+    { "name": "电商后端系统（REST API）", "desc": "实现商品/购物车/订单/支付沙箱等模块的 REST API，含鉴权、缓存、分页与单元测试，写入 MySQL，产出接口文档。", "skills": ["Java", "Spring Boot", "MySQL", "Redis", "Git"], "duration_weeks": 8 },
+    { "name": "推荐系统复现（MovieLens/淘宝公开数据）", "desc": "复现协同过滤到深度模型（如 NeuralCF）的演进路线，离线评测 Recall@K，写实验报告。", "skills": ["Python", "Machine Learning", "PyTorch", "Data Analysis"], "duration_weeks": 6 },
+    { "name": "开源贡献（good first issue 起步）", "desc": "从文档纠错、小 bug 到 feature，在 GitHub 上给真实开源项目提 PR 并走完 review 流程，积累公开可验证的协作记录。", "skills": ["Git", "Linux", "Code Review", "Technical Writing"], "duration_weeks": 12 },
+    { "name": "实验室科研课题", "desc": "进课题组打杂起步：文献复现、跑实验、整理数据，争取挂名论文或产出技术报告，是考研/算法岗的硬通货。", "skills": ["Research", "Python", "Technical Writing", "Paper Reading"], "duration_weeks": 16 },
+    { "name": "网络爬虫与数据分析报告", "desc": "选一个公开站点合规抓取（如招聘 JD 本身），清洗入库后做频次/共现分析并可视化出报告。", "skills": ["Python", "Data Analysis", "SQL", "Data Visualization"], "duration_weeks": 4 },
+    { "name": "校园二手交易平台（全栈）", "desc": "前后端分离 + 登录态 + 图片上传 + 简单审核后台，找 3~5 个真实用户用起来，迭代一轮。", "skills": ["Web Development", "Vue.js", "Node.js", "MySQL", "Docker"], "duration_weeks": 10 },
+    { "name": "mini-Redis / 分布式 KV 存储玩具", "desc": "用 C++ 或 Go 实现支持基本协议的网络 KV 服务，进阶加持久化与简单主从，吃透网络编程与存储入门。", "skills": ["C/C++", "Network Programming", "Distributed Systems", "Linux"], "duration_weeks": 8 },
+    { "name": "微信小程序应用", "desc": "从工具类小程序起步（课表/记账），走完注册-开发-审核-发布全流程，体验移动端产品闭环。", "skills": ["Mini Program", "JavaScript", "Web Development"], "duration_weeks": 6 },
+    { "name": "Kaggle Playground 入门赛", "desc": "用 Playground 系列低门槛赛题走完一次完整建模流程：EDA-特征-模型-提交，冲击前 50%。", "skills": ["Machine Learning", "Python", "Feature Engineering", "Data Analysis"], "duration_weeks": 8 }
+  ],
+  "internships": [
+    {
+      "stage": "大一暑假",
+      "typical_roles": ["IT支持助理", "测试执行实习生", "数据标注与审核", "校内实验室轮转"],
+      "skills": ["Office Software", "Python", "Software Testing"],
+      "note": "认知型为主，不强求技术岗：目标是搞清楚企业里各岗位真实在做什么，为②归并出的方向选择提供一手体感。"
+    },
+    {
+      "stage": "大二暑假",
+      "typical_roles": ["Web前端实习生", "Web后端实习生（CRUD）", "测试开发实习生", "运维助理"],
+      "skills": ["Python", "Java", "MySQL", "Linux", "Web Development", "Git"],
+      "note": "第一段真正的技术实习：用大一/大二课程（程序设计、数据结构、Web开发选修）即可投；小公司与校内项目基地门槛友好。"
+    },
+    {
+      "stage": "大三暑假",
+      "typical_roles": ["后端开发实习生", "算法实习生", "大数据开发实习生", "SRE/运维实习生", "安全实习生"],
+      "skills": ["Spring Boot", "MySQL", "Redis", "Machine Learning", "Spark", "Docker", "Linux"],
+      "note": "核心实习窗口，大厂日常实习以转正为导向；大三上就应开始投递，此时 OS/计网/数据库/机器学习等核心课已修完，正是检验③映射结果的机会。"
+    },
+    {
+      "stage": "大四",
+      "typical_roles": ["校招正式岗（秋招/春招）", "实习生转正", "毕业实习/毕设联合培养"],
+      "skills": ["System Design", "Software Development", "Teamwork", "Technical Writing"],
+      "note": "秋招 9-11 月是黄金窗口（与 ICPC 区域赛、数模国赛、BDCI 时间重叠，需在④规划里显式排优先级）；毕设尽量选与目标岗位一致的方向。"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+[
+  {
+    "id": "algo-017",
+    "title": "人工智能工程师-2027届秋招（北京）",
+    "company": "华夏银行",
+    "source": "锦鲤求职",
+    "url": "https://apply.jinliqiuzhi.com/jobs/446151",
+    "description": "岗位职责：1.从事关键AI技术（如模型选择、微调策略、推理优化、评估方法等）的研究、评估、技术选型与持续优化；2.针对金融业务问题，梳理分析需求、设计智能化解决方案并跟踪落地效果，确保项目高质量交付；3.深度参与AI技术创新、攻坚技术难题。任职要求：1.2027届普通高等教育本科及以上学历；2.精通Python开发语言，熟悉numpy、pandas、Scipy等类库；3.熟悉Sklearn、TensorFlow、Keras、PyTorch等机器学习、深度学习框架；4.熟悉深度学习算法CNN、RNN、LSTM、Transformer、Attention等；5.了解大语言模型（如ChatGPT、DeepSeek）相关技术：RLHF、MoE、微调、蒸馏等；6.熟悉数据清洗、切片、向量化等数据处理技术，能处理大规模数据集；7.有算力加速卡部署、集群优化或大模型部署调优经验者优先；8.工作地点北京。"
+  }
+]

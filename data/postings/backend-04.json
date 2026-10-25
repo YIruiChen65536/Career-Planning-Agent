@@ -1,0 +1,10 @@
+[
+  {
+    "id": "backend-004",
+    "title": "Python后端开发工程师",
+    "company": "利通电子",
+    "source": "猎聘",
+    "url": "https://www.liepin.com/job/1983068643.shtml",
+    "description": "岗位职责：1.基于Python技术栈（Django/Flask/FastAPI）设计并实现RESTful API、微服务或中台服务，负责用户体系、权限、订单/支付、流程引擎、数据同步等核心模块；2.负责MySQL/PostgreSQL表结构设计、索引优化与慢查询治理，使用Redis做缓存、分布式锁、限流与计数器；3.编写符合PEP8规范的可测试代码，完成单元测试与线上问题排查（超时、内存泄漏、并发异常等）；4.参与服务容器化（Docker）与CI/CD。任职要求：1.本科及以上学历，计算机、软件工程等相关专业，1年及以上Python后端开发经验；2.熟悉装饰器、生成器、协程/异步IO；3.熟练使用MySQL（复杂SQL、执行计划分析）与Redis；4.熟悉Git、Linux，了解JWT鉴权、防重放、幂等等安全设计。工作地点：上海浦东。"
+  }
+]

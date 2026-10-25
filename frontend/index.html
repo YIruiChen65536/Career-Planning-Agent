@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="职规 Agent：输入画像，生成八学期职业成长路线" />
+  <title>职规 Agent · 大学职业规划助手</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230E7A6F'/%3E%3Cpath d='M8 22 L14 12 L18 17 L24 8' stroke='%23fff' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='24' cy='8' r='2.6' fill='%23F4B942'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到主要内容</a>
+
+  <!-- ================= 顶栏 ================= -->
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 32 32" width="30" height="30"><rect width="32" height="32" rx="8" fill="#0E7A6F"/><path d="M8 22 L14 12 L18 17 L24 8" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="24" cy="8" r="2.6" fill="#F4B942"/></svg>
+      </span>
+      <span class="brand-name">职规 Agent</span>
+      <span class="brand-sub">大学职业规划助手</span>
+    </div>
+    <div class="topbar-right">
+      <button id="btn-open-chat" class="btn btn-ghost btn-sm" type="button">
+        <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M3 5.5C3 4.1 4.1 3 5.5 3h9C15.9 3 17 4.1 17 5.5v6c0 1.4-1.1 2.5-2.5 2.5H9l-3.6 3v-3H5.5C4.1 14 3 12.9 3 11.5v-6Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+        规划顾问
+      </button>
+    </div>
+  </header>
+
+  <!-- ================= 降级演示角标 ================= -->
+  <div id="demo-badge" class="demo-badge" hidden>
+    <span class="demo-dot" aria-hidden="true"></span>
+    演示数据
+  </div>
+
+  <main id="main">
+    <!-- ================= 视图 1：画像表单 ================= -->
+    <section id="view-home" class="view">
+      <div class="hero">
+        <h1 class="hero-title">把四年的时间，<br />排成一条看得见的路线。</h1>
+        <p class="hero-sub">
+          填写你的画像，系统会分析目标岗位的真实招聘要求，
+          结合培养方案排出八学期成长路线——所有建议都可对照 JD 原文查验。
+        </p>
+      </div>
+
+      <form id="profile-form" class="card form-card" novalidate>
+        <div class="form-grid">
+          <div class="field">
+            <label class="field-label" for="f-name">姓名<span class="optional">可不填</span></label>
+            <input class="input" id="f-name" name="name" type="text" maxlength="20" placeholder="如：陈晓" autocomplete="name" />
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="f-grade">当前年级</label>
+            <select class="input" id="f-grade" name="grade"></select>
+          </div>
+
+          <div class="field field-span">
+            <label class="field-label" for="f-role">目标岗位</label>
+            <input class="input" id="f-role" name="target_role" type="text" maxlength="30" placeholder="如：Python后端" required />
+            <div class="chip-row" id="role-chips" aria-label="常用岗位快捷选择"></div>
+          </div>
+
+          <div class="field field-span">
+            <label class="field-label" for="f-skill-input">已掌握技能<span class="optional">回车添加，点 × 移除</span></label>
+            <div class="tag-box" id="skill-box">
+              <ul class="tag-list" id="skill-tags" aria-label="已掌握技能列表"></ul>
+              <input class="tag-input" id="f-skill-input" type="text" maxlength="20" placeholder="如：Python、C、SQL…" aria-label="添加技能" />
+            </div>
+            <div class="chip-row" id="skill-suggest" aria-label="常用技能快捷添加"></div>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="f-hours">
+              每周可投入<span class="hours-value"><b id="f-hours-display">10</b> 小时/周</span>
+            </label>
+            <input class="range" id="f-hours" name="weekly_hours" type="range" min="0" max="40" step="1" value="10" />
+            <div class="range-scale" aria-hidden="true"><span>0</span><span>10</span><span>20</span><span>30</span><span>40</span></div>
+          </div>
+
+          <div class="field">
+            <span class="field-label" id="path-label">路线</span>
+            <div class="segmented" role="radiogroup" aria-labelledby="path-label">
+              <label class="seg-item"><input type="radio" name="path" value="就业" checked /><span>就业</span></label>
+              <label class="seg-item"><input type="radio" name="path" value="考研" /><span>考研</span></label>
+              <label class="seg-item"><input type="radio" name="path" value="未定" /><span>未定</span></label>
+            </div>
+          </div>
+
+          <div class="field field-span">
+            <label class="field-label" for="f-notes">补充说明<span class="optional">可不填</span></label>
+            <textarea class="input" id="f-notes" name="notes" rows="2" maxlength="200" placeholder="如：目标公司类型、已获奖项、其他约束…"></textarea>
+          </div>
+        </div>
+
+        <p class="form-error" id="form-error" role="alert" hidden></p>
+
+        <div class="form-actions">
+          <button class="btn btn-primary btn-lg" id="btn-submit" type="submit">
+            生成我的路线图
+          </button>
+          <p class="form-hint">真实接口约需 10–30 秒，生成期间可取消并回退到演示数据。</p>
+        </div>
+      </form>
+    </section>
+
+    <!-- ================= 视图 2：分析与路线 ================= -->
+    <section id="view-analysis" class="view" hidden>
+      <div class="analysis-head">
+        <button class="btn btn-ghost btn-sm" id="btn-back-home" type="button">← 修改画像</button>
+        <button class="btn btn-ghost btn-sm" id="btn-refresh" type="button">重新生成</button>
+      </div>
+
+      <div id="demo-banner" class="demo-banner" hidden>
+        <b>当前展示演示数据。</b>
+        <span id="demo-banner-reason">后端接口未就绪或网络不可达，已自动降级。</span>
+        接口恢复后重新生成即可使用真实数据。
+      </div>
+
+      <section class="card profile-bar" id="profile-bar" aria-label="画像摘要"></section>
+
+      <!-- 岗位技能频率 -->
+      <section class="block" id="block-chart">
+        <div class="block-head">
+          <h2 class="block-title">岗位技能要求频率</h2>
+          <span class="source-tag" id="chart-source-tag" data-src="pending">数据源待定</span>
+        </div>
+        <p class="block-sub" id="chart-subtitle">统计目标岗位招聘 JD 中各技能出现的条数，按频率降序，标注「核心」为出现率达标技能。</p>
+        <div class="card chart-card">
+          <div class="chart-legend" id="chart-legend" aria-hidden="true"></div>
+          <div id="chart-mount" class="chart-mount" role="img" aria-label="技能频率条形图"></div>
+        </div>
+      </section>
+
+      <!-- 技能映射 -->
+      <section class="block" id="block-mapping">
+        <div class="block-head">
+          <h2 class="block-title">技能 → 成长路径映射</h2>
+          <span class="source-tag" id="map-source-tag" data-src="builtin">内置知识库</span>
+        </div>
+        <p class="block-sub">对照本校培养方案课程与整理好的竞赛/项目/实习机会，给出每个技能的补齐路径。</p>
+        <div class="card table-card">
+          <div class="table-scroll">
+            <table class="map-table">
+              <thead>
+                <tr>
+                  <th scope="col">技能</th>
+                  <th scope="col">课程</th>
+                  <th scope="col">竞赛</th>
+                  <th scope="col">项目</th>
+                  <th scope="col">实习</th>
+                </tr>
+              </thead>
+              <tbody id="map-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 八学期路线 -->
+      <section class="block" id="block-roadmap">
+        <div class="block-head">
+          <h2 class="block-title">八学期成长路线</h2>
+          <span class="source-tag" id="plan-source-tag" data-src="pending">数据源待定</span>
+        </div>
+        <p class="block-sub" id="plan-summary"></p>
+        <div class="card risks-card" id="risks-card" hidden>
+          <h3 class="risks-title">需要注意</h3>
+          <ul id="risks-list" class="risks-list"></ul>
+        </div>
+        <ol class="timeline" id="timeline"></ol>
+      </section>
+    </section>
+  </main>
+
+  <!-- ================= 生成中遮罩 ================= -->
+  <div class="loading-overlay" id="loading-overlay" hidden>
+    <div class="loading-card" role="dialog" aria-modal="true" aria-labelledby="loading-title" aria-busy="true">
+      <h2 class="loading-title" id="loading-title">正在生成你的路线图</h2>
+      <p class="loading-stage" id="loading-stage">已提交画像，等待后端规划…</p>
+      <div class="loading-track" aria-hidden="true">
+        <div class="loading-fill" id="loading-fill"></div>
+      </div>
+      <div class="loading-meta">
+        <span id="loading-elapsed">已等待 0 秒</span>
+        <span>真实接口约需 10–30 秒</span>
+      </div>
+      <button class="btn btn-ghost" id="btn-cancel-plan" type="button">取消并查看演示数据</button>
+    </div>
+  </div>
+
+  <!-- ================= 对话面板 ================= -->
+  <aside class="chat-panel" id="chat-panel" aria-label="规划顾问对话" aria-hidden="true">
+    <header class="chat-head">
+      <div>
+        <h2 class="chat-title">规划顾问</h2>
+        <p class="chat-sub">围绕你的路线图随时提问</p>
+      </div>
+      <div class="chat-head-actions">
+        <button class="btn-icon" id="btn-chat-clear" type="button" title="清空对话记录" aria-label="清空对话记录">
+          <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M4 6h12M8 6V4.5c0-.6.4-1 1-1h2c.6 0 1 .4 1 1V6m2 0-.6 9.1c0 .5-.5.9-1 .9H7.6c-.5 0-1-.4-1-.9L6 6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+        <button class="btn-icon" id="btn-chat-close" type="button" title="收起对话面板" aria-label="收起对话面板">
+          <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="m6 6 8 8M14 6l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+    </header>
+    <div class="chat-messages" id="chat-messages" aria-live="polite"></div>
+    <form class="chat-composer" id="chat-form">
+      <textarea class="chat-input" id="chat-input" rows="1" maxlength="500" placeholder="输入问题，回车发送（Shift+回车换行）"></textarea>
+      <button class="btn btn-primary chat-send" id="btn-chat-send" type="submit" aria-label="发送">
+        <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M3.5 10 17 3.5 12.5 17l-3-5.5-6-1.5Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+      </button>
+    </form>
+    <p class="chat-foot">对话历史仅保存在本机浏览器</p>
+  </aside>
+
+  <button class="chat-fab" id="chat-fab" type="button" title="打开规划顾问" aria-label="打开规划顾问" hidden>
+    <svg viewBox="0 0 20 20" width="22" height="22" aria-hidden="true"><path d="M3 5.5C3 4.1 4.1 3 5.5 3h9C15.9 3 17 4.1 17 5.5v6c0 1.4-1.1 2.5-2.5 2.5H9l-3.6 3v-3H5.5C4.1 14 3 12.9 3 11.5v-6Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+  </button>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <noscript>
+    <div class="noscript-tip">本页面需要启用 JavaScript 才能使用。</div>
+  </noscript>
+
+  <script src="mock.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

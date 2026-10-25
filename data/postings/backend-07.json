@@ -1,0 +1,10 @@
+[
+  {
+    "id": "backend-007",
+    "title": "Java后端工程师",
+    "company": "无锡壹阳能源科技有限公司",
+    "source": "猎聘",
+    "url": "https://www.liepin.com/job/1985239883.shtml",
+    "description": "职位概述：加入储能及家庭能源管理系统开发团队，参与储能设备数据接入、IoT数据处理、后端服务开发及AWS云平台相关工作。工作内容：1.参与储能设备数据采集、设备控制及家庭能源调度等后端服务开发与维护；2.参与IoT设备数据接入及接口开发；3.基于Java、Spring Boot完成后端功能开发、测试及问题修复；4.参与MySQL、PostgreSQL等数据库开发与维护及AWS云平台部署运维。任职要求：1.计算机、软件工程或相关专业本科及以上，优秀应届毕业生亦可；2.应届毕业或3年以内后端开发经验；3.良好的Java基础，了解JVM、多线程、IO；4.熟悉Spring Boot，了解Spring Cloud及微服务基本概念；5.熟悉MySQL或PostgreSQL。加分项：IoT/新能源项目经验、Docker/Kubernetes/EKS使用经验、了解RESTful/gRPC。"
+  }
+]

@@ -32,9 +32,9 @@ uvicorn server:app --reload # 启动后访问 http://127.0.0.1:8000/docs
 
 ## 当前状态（同步自 04-进度状态）
 
-- M0 仓库与文档系统：✅ 已完成
-- 下一步：M1 最小闭环（一条 JD → 结构化 JSON）
+- M0~M5 全部完成（2026-10-26 并行冲刺）：分析→规划→对话→改考研重排 全链路可用，演示缓存已预热（断网可回放）
+- 下一步：小组彩排演示流程（scripts/demo_checklist.md），curriculum.json 可替换为本校真实培养方案
 
 ## 技术栈一句话
 
-Python 3.11+ · FastAPI + PydanticAI · DeepSeek/GLM（OpenAI 兼容国产 API）· SQLite · 前端待定（简版网页）
+Python 3.11+ · FastAPI + PydanticAI · DeepSeek/GLM 或任意 OpenAI 兼容网关（.env 切换）· SQLite（LLM 缓存/档案）· 原生手写前端单页（无构建、断网可演示）

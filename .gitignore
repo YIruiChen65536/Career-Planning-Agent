@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# 环境与密钥
+.venv/
+.env
+
+# 本地数据与临时区（语料 data/ 要提交，db/tmp 不提交）
+db/
+tmp/
+
+# 系统与编辑器
+.DS_Store
+.vscode/
+.idea/

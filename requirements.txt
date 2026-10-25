@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+pydantic-ai
+pandas
+python-dotenv
+pytest
+
+# 首次安装后执行: pip freeze > requirements.lock.txt 并提交
+# 日常与演示一律按 lock 文件安装（06 手册§7 依赖纪律）

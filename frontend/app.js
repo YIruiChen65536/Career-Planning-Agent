@@ -6,7 +6,9 @@
  * 任何情况下不白屏、不因 JS 异常卡死。
  *
  * 超时策略：/api/plan 按任务约定可能 10–30 秒，给 60s 上限 + 进度反馈 + 可取消；
- * 其余请求（analyze / chat 建连）3 秒快速失败即降级，保证教室断网时演示流畅。
+ * /api/chat 的首字节 = 服务端整段对话 LLM 跑完才开始流式回放，冷缓存要等数秒，
+ * 故建连等待放宽到 30s（断网时 connection refused 依旧毫秒级失败，不影响离线演示）；
+ * /api/analyze 同理放宽到 30s：语料多时冷缓存抽取可能超过 3s，太短会让真实数据被误降级成演示数据。
  */
 (function () {
   "use strict";
@@ -23,8 +25,8 @@
   })();
 
   var TIMEOUT_PLAN_MS = 60000;      // /api/plan：真实链路 10–30s，留足余量，期间有进度条可取消
-  var TIMEOUT_ANALYZE_MS = 3000;    // /api/analyze：3s 快速失败即降级（任务硬要求）
-  var TIMEOUT_CHAT_CONNECT_MS = 3000; // /api/chat：3s 内未建连即降级
+  var TIMEOUT_ANALYZE_MS = 30000;   // /api/analyze：冷缓存抽取 12 条 JD 可能 >3s，放宽避免真实数据被误降级
+  var TIMEOUT_CHAT_CONNECT_MS = 30000; // /api/chat：TTFB = 服务端整轮对话跑完的时间（冷缓存数秒），30s 内等到首帧
   var CHAT_STREAM_MAX_MS = 120000;  // SSE 建连后整体上限
 
   var STORAGE_PROFILE = "careerAgent.profile.v1";
@@ -160,10 +162,18 @@
       function (res) {
         clearTimeout(timer);
         if (!res.ok) {
-          var err = new Error("HTTP " + res.status);
-          err.kind = "http";
-          err.status = res.status;
-          throw err;
+          // 带出服务端错误详情（如 503 的"LLM 不可用：…"），让降级横幅能说明真实原因
+          return res
+            .json()
+            .catch(function () { return null; })
+            .then(function (body) {
+              var err = new Error("HTTP " + res.status);
+              err.kind = "http";
+              err.status = res.status;
+              var detail = body && typeof body.detail === "string" ? body.detail : "";
+              if (detail) err.detail = detail;
+              throw err;
+            });
         }
         return res.json().catch(function () {
           var err = new Error("响应不是合法 JSON");
@@ -195,13 +205,17 @@
 
   function describeErr(err) {
     if (!err) return "未知错误";
+    var base;
     switch (err.kind) {
-      case "timeout": return "等待超时";
-      case "http": return "服务返回 " + err.status;
-      case "parse": return "响应格式异常";
-      case "cancelled": return "已取消";
-      default: return "网络不可达";
+      case "timeout": base = "等待超时"; break;
+      case "http": base = "服务返回 " + err.status; break;
+      case "parse": base = "响应格式异常"; break;
+      case "cancelled": base = "已取消"; break;
+      default: base = "网络不可达";
     }
+    // 服务端透出的原因（如"LLM 不可用：请检查 .env 配置"）对排查最有价值，截短附在后面
+    if (err.detail) base += "（" + String(err.detail).slice(0, 120) + "）";
+    return base;
   }
 
   function loadPlan(profile, signal) {
@@ -888,6 +902,13 @@
     var wrap = el("div", "chat-msg assistant");
     var bubble = el("div", "chat-bubble");
     bubble.textContent = "";
+    // 等待首帧的"正在思考"占位：真实链路服务端要跑完整轮对话才开始流式回放，空白等待体感像卡死
+    var thinking = el("span", "chat-thinking");
+    thinking.appendChild(el("span", "chat-thinking-dot"));
+    thinking.appendChild(el("span", "chat-thinking-dot"));
+    thinking.appendChild(el("span", "chat-thinking-dot"));
+    thinking.appendChild(el("span", "chat-thinking-text", " 正在思考…"));
+    bubble.appendChild(thinking);
     wrap.appendChild(bubble);
     var meta = el("div", "chat-meta");
     meta.appendChild(el("span", null, "顾问"));
@@ -976,6 +997,12 @@
     var timer = null;
     var ended = false;
     var doneCb = null;
+    var flush = false; // 收流结束后置真：不再保持打字节奏，一次放完剩余队列
+
+    function clearThinking() {
+      var think = bubble.querySelector(".chat-thinking");
+      if (think) think.remove();
+    }
 
     function drain() {
       if (!queue) {
@@ -989,8 +1016,9 @@
         }
         return;
       }
-      // 队列越长放得越快，避免真实流式时延迟堆积
-      var speed = Math.max(1, Math.floor(queue.length / 16));
+      // 队列越长放得越快，避免真实流式时延迟堆积；收流结束则立即放完，
+      // 否则后台页/慢环境下定时器被节流，回复停在某处、发送按钮长时间不可用
+      var speed = flush ? queue.length : Math.max(1, Math.floor(queue.length / 16));
       var piece = queue.slice(0, speed);
       queue = queue.slice(speed);
       bubble.appendChild(document.createTextNode(piece));
@@ -1011,6 +1039,7 @@
     return {
       push: function (text) {
         if (!text) return;
+        clearThinking();
         queue += text;
         ensureCursor();
         if (!timer) timer = setInterval(drain, 18);
@@ -1018,12 +1047,34 @@
       end: function (cb) {
         ended = true;
         doneCb = cb || null;
-        if (!queue && !timer && doneCb) {
-          var f = doneCb;
-          doneCb = null;
-          removeCursor();
-          f();
+        clearThinking();
+        if (!queue) {
+          if (doneCb) {
+            var f0 = doneCb;
+            doneCb = null;
+            removeCursor();
+            f0();
+          }
+          return;
         }
+        if (document.hidden) {
+          // 后台页里定时器会被强节流（可达 1 次/分钟），同步放完剩余文本，
+          // 避免回复停在半截、发送按钮长时间不可用
+          if (timer) { clearInterval(timer); timer = null; }
+          var rest = queue;
+          queue = "";
+          bubble.appendChild(document.createTextNode(rest));
+          if (onOverflow) onOverflow();
+          removeCursor();
+          if (doneCb) {
+            var f1 = doneCb;
+            doneCb = null;
+            f1();
+          }
+          return;
+        }
+        flush = true;
+        if (!timer) timer = setInterval(drain, 18);
       },
     };
   }

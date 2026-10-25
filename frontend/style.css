@@ -834,6 +834,29 @@ select.input { appearance: auto; }
 }
 @keyframes blink { 50% { opacity: 0; } }
 
+/* 等待首帧的"正在思考"占位 */
+.chat-thinking {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--ink-3);
+  font-size: 13px;
+}
+.chat-thinking-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--brand);
+  animation: think-bounce 1.2s ease-in-out infinite;
+}
+.chat-thinking-dot:nth-child(2) { animation-delay: 0.15s; }
+.chat-thinking-dot:nth-child(3) { animation-delay: 0.3s; }
+.chat-thinking-text { margin-left: 3px; }
+@keyframes think-bounce {
+  0%, 100% { opacity: 0.3; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(-2px); }
+}
+
 .chat-empty-tip { text-align: center; color: var(--ink-3); font-size: 12.5px; padding: 26px 12px; line-height: 1.9; }
 
 .chat-composer {

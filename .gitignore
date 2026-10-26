@@ -7,8 +7,9 @@ __pycache__/
 .venv/
 .env
 
-# 本地数据与临时区（语料 data/ 要提交，db/tmp 不提交）
-db/
+# 本地数据与临时区（语料 data/ 与演示缓存 db/career.db 要提交，其余不提交）
+db/*
+!db/career.db
 tmp/
 
 # 系统与编辑器

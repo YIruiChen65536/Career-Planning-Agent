@@ -48,25 +48,20 @@ if errorlevel 1 (
     echo [2/3] deps ready, skip
 )
 
-REM ---------- 4. Check .env (API key required) ----------
+REM ---------- 4. Check .env (optional: offline demo works without key) ----------
 if not exist ".env" (
     copy /y .env.example .env >nul
     echo [3/3] .env created from template.
     echo.
     echo  =========================================================
-    echo   NO API KEY FOUND - the app cannot run without one.
-    echo   1. Open .env in this folder with Notepad
-    echo   2. Get a key yourself:
+    echo   NO API KEY FOUND. You can still try the OFFLINE DEMO:
+    echo   the page works right now with bundled demo data.
+    echo   For real answers, get a key yourself - none is bundled:
     echo      DeepSeek: platform.deepseek.com - key starts with sk-
     echo      Zhipu:    open.bigmodel.cn - has free tier
-    echo   3. Paste it into DEEPSEEK_API_KEY= or ZAI_API_KEY=
-    echo   4. Save, then run this .bat again.
-    echo   NOTE: No API key is bundled with this repo.
+    echo   Paste it into .env, save, then run this .bat again.
     echo  =========================================================
     echo.
-    start notepad .env
-    pause
-    exit /b 0
 )
 
 REM ---------- 5. Start server ----------

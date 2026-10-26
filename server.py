@@ -17,10 +17,28 @@ from career_agent.schemas import Roadmap, StudentProfile
 
 app = FastAPI(title="职规 Agent", version="0.1.0")
 
+_NO_KEY_HINT = (
+    "未配置 LLM API key：本仓库不附带 key，请自行到 DeepSeek 开放平台（platform.deepseek.com）"
+    "或智谱开放平台（open.bigmodel.cn）创建并填入 .env；填好前页面会自动使用内置演示数据。"
+)
+
+
+def _llm_configured() -> bool:
+    """只判断配置存在性（读 env 不发网络请求），用于无 key 时给用户明确引导而非含糊 503。"""
+    from career_agent import config
+
+    if config.MODEL.startswith("zai:"):
+        return bool(config.ZAI_API_KEY)
+    if config.MODEL.startswith("deepseek:"):
+        return bool(config.DEEPSEEK_API_KEY)
+    if config.MODEL.startswith("openai:"):
+        return bool(config.OPENAI_BASE_URL and config.OPENAI_API_KEY)
+    return False
+
 
 @app.get("/health")
 def health() -> dict:
-    return {"status": "ok"}
+    return {"status": "ok", "llm_configured": _llm_configured()}
 
 
 @app.get("/api/analyze/{keyword}")
@@ -31,7 +49,9 @@ async def analyze(keyword: str, limit: int = Query(default=10, ge=1, le=50)) -> 
     reqs_or_none, errors = await pipeline.extract_all(postings)
     reqs = [r for r in reqs_or_none if r is not None]
     if postings and not reqs:
-        # 一条都没抽出来且带错误：基本等于 LLM 缺配置或网关不可达，按 503 透出而非空结果误导前端
+        # 一条都没抽出来且带错误：无 key 给明确引导（引导用演示模式），有 key 才是 503 真故障
+        if not _llm_configured():
+            raise HTTPException(status_code=503, detail=_NO_KEY_HINT)
         detail = errors[0][:200] if errors else "未知错误"
         raise HTTPException(status_code=503, detail=f"LLM 不可用：请检查 .env 配置（{detail}）")
     skills = pipeline.aggregate_skills(reqs)
@@ -49,7 +69,9 @@ async def plan(profile: StudentProfile) -> Roadmap:
     reqs_or_none, errors = await pipeline.extract_all(postings)
     reqs = [r for r in reqs_or_none if r is not None]
     if postings and not reqs:
-        # 与 /api/analyze 同口径：语料在而一条都没抽出来 = LLM 缺配置/网关不可达，503 而非空路线图误导前端
+        # 与 /api/analyze 同口径：无 key 给引导，有 key 才 503
+        if not _llm_configured():
+            raise HTTPException(status_code=503, detail=_NO_KEY_HINT)
         detail = errors[0][:200] if errors else "未知错误"
         raise HTTPException(status_code=503, detail=f"LLM 不可用：请检查 .env 配置（{detail}）")
     skills = pipeline.aggregate_skills(reqs)
@@ -59,6 +81,8 @@ async def plan(profile: StudentProfile) -> Roadmap:
     except HTTPException:
         raise
     except Exception as exc:  # ③④的 LLM 调用失败（配置缺失/网关不可达），沿用 analyze 的 503 口径
+        if not _llm_configured():
+            raise HTTPException(status_code=503, detail=_NO_KEY_HINT) from exc
         detail = f"{type(exc).__name__}: {str(exc)[:150]}"
         raise HTTPException(status_code=503, detail=f"LLM 不可用：请检查 .env 配置（{detail}）") from exc
     # sqlite 写同样走线程池：不阻塞 event loop（/api/chat 的 SSE 回放与其并发时尤其重要）
@@ -115,7 +139,9 @@ async def chat(req: ChatRequest) -> StreamingResponse:
         turn = await agent.run_dialogue(
             profile, roadmap, req.message, history=[m.model_dump() for m in req.history]
         )
-    except Exception as exc:  # LLM 配置缺失/网关不可达，与 /api/analyze 同口径 503
+    except Exception as exc:  # LLM 配置缺失/网关不可达，与 /api/analyze 同口径
+        if not _llm_configured():
+            raise HTTPException(status_code=503, detail=_NO_KEY_HINT) from exc
         detail = f"{type(exc).__name__}: {str(exc)[:150]}"
         raise HTTPException(status_code=503, detail=f"LLM 不可用：请检查 .env 配置（{detail}）") from exc
 

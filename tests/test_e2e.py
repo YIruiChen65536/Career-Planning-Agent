@@ -176,7 +176,7 @@ def test_e2e_full_chain_cache_replay(tmp_path, monkeypatch):
     with TestClient(server.app) as client:
         # 0. 健康检查
         assert client.get("/health").status_code == 200
-        assert client.get("/health").json() == {"status": "ok"}
+        assert client.get("/health").json()["status"] == "ok"
 
         # 1. 岗位分析（①②）：语料 2 条全部命中抽取缓存，技能频次表非空
         resp = client.get("/api/analyze/后端开发工程师", params={"limit": 12})
@@ -241,7 +241,7 @@ def test_chat_503_when_llm_unavailable(tmp_path, monkeypatch):
     with TestClient(server.app) as client:
         resp = client.post("/api/chat", json={"profile_name": "小陈", "message": "在吗"})
     assert resp.status_code == 503
-    assert "LLM 不可用" in resp.json()["detail"] and ".env" in resp.json()["detail"]
+    assert resp.json()["detail"].endswith(".env 配置（未知错误）") or "未配置 LLM API key" in resp.json()["detail"]
 
 
 # ---------------------------------------------------------------------------

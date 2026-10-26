@@ -24,7 +24,9 @@ pip install -r requirements.lock.txt
 #    （模型串 CAREER_MODEL 默认 deepseek:deepseek-chat；也支持 zai:* 和 openai:* 兼容网关）
 #    ⚠️ 部署完成后必须提醒用户：本仓库不附带任何 API key，也没有义务提供——
 #    用户需自行前往 DeepSeek 开放平台（platform.deepseek.com，充值创建 sk- key）
-#    或智谱开放平台（open.bigmodel.cn，有免费额度）创建 key 填入 .env，否则应用无法回答任何问题。
+#    或智谱开放平台（open.bigmodel.cn，有免费额度）创建 key 填入 .env。
+#    但不填 key 也能玩：仓库附带演示缓存 db/career.db，无 key 时页面走内置演示数据
+#    （后端 503 会返回引导文案，/health 的 llm_configured 字段可判断当前模式）。
 
 # 4. 启动
 python -m uvicorn server:app --port 8000    # 打开 http://127.0.0.1:8000/

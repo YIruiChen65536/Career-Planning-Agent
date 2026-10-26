@@ -411,7 +411,7 @@ def test_plan_endpoint_503_when_extract_llm_unavailable(tmp_path, monkeypatch):
     with TestClient(server.app) as client:
         resp = client.post("/api/plan", json=_profile().model_dump(mode="json"))
     assert resp.status_code == 503
-    assert "LLM 不可用" in resp.json()["detail"] and ".env" in resp.json()["detail"]
+    assert resp.json()["detail"].endswith(".env 配置（未知错误）") or "未配置 LLM API key" in resp.json()["detail"]
 
 
 def test_plan_endpoint_503_when_mapping_llm_unavailable(tmp_path, monkeypatch):
@@ -423,4 +423,4 @@ def test_plan_endpoint_503_when_mapping_llm_unavailable(tmp_path, monkeypatch):
     with TestClient(server.app) as client:
         resp = client.post("/api/plan", json=_profile().model_dump(mode="json"))
     assert resp.status_code == 503
-    assert "LLM 不可用" in resp.json()["detail"]
+    assert resp.json()["detail"].endswith(".env 配置（未知错误）") or "未配置 LLM API key" in resp.json()["detail"]

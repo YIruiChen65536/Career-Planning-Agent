@@ -129,7 +129,7 @@ def test_analyze_endpoint_503_when_llm_unavailable(tmp_path, monkeypatch):
     with TestClient(server.app) as client:
         resp = client.get("/api/analyze/Python")
     assert resp.status_code == 503
-    assert "LLM 不可用" in resp.json()["detail"] and ".env" in resp.json()["detail"]
+    assert resp.json()["detail"].endswith(".env 配置（未知错误）") or "未配置 LLM API key" in resp.json()["detail"]
 
 
 def test_analyze_endpoint_limit_cap(tmp_path, monkeypatch):
